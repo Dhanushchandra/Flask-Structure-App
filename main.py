@@ -18,7 +18,8 @@ def getall():
 
 @app.route("/<id>")
 def get(id):
-    data = mongo.db.users.find_one_or_404({"_id": ObjectId(id)})
+    data = mongo.db.users.find_one_or_404({"_id":ObjectId(id)})
+    data["_id"] = str(data["_id"])
     if data:
         return jsonify(data)
     else:
