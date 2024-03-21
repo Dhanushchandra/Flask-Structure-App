@@ -18,8 +18,7 @@ class UserController:
         data = self.mongo.db.users.find()
         for doc in data:
             result.append(
-                {'_id': str(doc['_id']), 'name': str(doc['name']), 'age': str(doc['age']),
-                 'college': str(doc['college'])})
+                {'_id': str(doc['_id']), 'username': str(doc['username'])})
         return result
 
     def getuser(self, id):

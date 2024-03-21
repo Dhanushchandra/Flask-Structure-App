@@ -4,6 +4,7 @@ from flask_pymongo import PyMongo
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
 
 from controller.user import UserController
+from authentication.jwthelper import jwt_middleware
 
 app = Flask(__name__)
 app.config["MONGO_URI"] = "mongodb://localhost:27017/flask1"
@@ -26,11 +27,15 @@ def login():
 
 
 @app.route("/")
+@jwt_required()
+@jwt_middleware
 def getall():
     return user.getusers()
 
 
 @app.route("/<id>")
+@jwt_required()
+@jwt_middleware
 def get(id):
     return user.getuser(id)
 
@@ -41,11 +46,15 @@ def post():
 
 
 @app.route("/<id>", methods=["PUT"])
+@jwt_required()
+@jwt_middleware
 def update(id):
     return user.updateuser(id)
 
 
 @app.route("/<id>", methods=["DELETE"])
+@jwt_required()
+@jwt_middleware
 def delete(id):
     return user.deleteuser(id)
 
