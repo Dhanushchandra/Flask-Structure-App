@@ -1,52 +1,37 @@
 from bson import ObjectId
-from flask import Flask, request, jsonify
+from flask import Flask
 from flask_pymongo import PyMongo
+from controller.user import UserController
+
 
 app = Flask(__name__)
 app.config["MONGO_URI"] = "mongodb://localhost:27017/flask1"
 mongo = PyMongo(app)
 
+user = UserController(mongo)
 
 @app.route("/")
 def getall():
-    result = []
-    data = mongo.db.users.find()
-    for doc in data:
-        result.append(
-            {'_id': str(doc['_id']), 'name': str(doc['name']), 'age': str(doc['age']), 'college': str(doc['college'])})
-    return result
+    return user.getusers()
 
 @app.route("/<id>")
 def get(id):
-    data = mongo.db.users.find_one_or_404({"_id":ObjectId(id)})
-    data["_id"] = str(data["_id"])
-    if data:
-        return jsonify(data)
-    else:
-        return jsonify({"error": "User not found"}), 404
+    return user.getuser(id)
 
 
 @app.route("/", methods=["POST"])
 def post():
-    data = request.json
-    mongo.db.users.insert_one(data)
-    return "save"
+    return user.saveuser()
 
 
 @app.route("/<id>", methods=["PUT"])
 def update(id):
-    data = request.json
-    if data:
-        updated = mongo.db.users.update_one({'_id': ObjectId(id)}, {'$set': data})
-        if updated:
-            return "updated"
+    return user.updateuser(id)
 
 
 @app.route("/<id>", methods=["DELETE"])
 def delete(id):
-    deleted = mongo.db.users.delete_one({'_id': ObjectId(id)})
-    if deleted:
-        return "deleted"
+    return user.deleteuser(id)
 
 
 app.run(port=3000, debug=True)
