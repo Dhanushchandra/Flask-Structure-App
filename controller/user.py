@@ -1,12 +1,17 @@
+import pymongo.errors
 from bson import ObjectId
 from flask import request, jsonify
 from flask_jwt_extended import create_access_token, get_jwt_identity
 from werkzeug.security import generate_password_hash, check_password_hash
+from marshmallow import ValidationError
+from model.userSchema import UserSchema
+from exceptions.userExceptions import UserAlreadyExistError
 
 
 class UserController:
     def __init__(self, mongo):
         self.mongo = mongo
+        self.userschema = UserSchema()
 
     def saveuser(self):
         data = request.json
@@ -42,21 +47,32 @@ class UserController:
             return "deleted"
 
     def userregister(self):
-        data = request.get_json()
-        username = data.get("username")
-        password = generate_password_hash(data.get("password"))
-        self.mongo.db.users.insert_one({'username': username, 'password': password})
-        return jsonify({
-            "msg": "user saved successfully"
-        }), 201
+        try:
+            data = self.userschema.load(request.get_json())
+            username = data.get("username")
+            email = data.get("email")
+            password = generate_password_hash(data.get("password"))
+            isExist = self.mongo.db.users.find_one({'email': email})
+            if isExist:
+                raise UserAlreadyExistError(email)
+            self.mongo.db.users.insert_one({'username': username,'email': email, 'password': password})
+            return jsonify({
+                "msg": "user saved successfully"
+            }), 201
+        except ValidationError as e:
+            return jsonify({'error': e.messages}), 400
+        except UserAlreadyExistError as e:
+            return e.error()
+        except pymongo.errors.PyMongoError as e:
+            return jsonify({'error': str(e)}), 500
 
     def userlogin(self):
         data = request.get_json()
-        username = data.get("username")
+        email = data.get("email")
         password = data.get("password")
-        user = self.mongo.db.users.find_one_or_404({'username': username})
+        user = self.mongo.db.users.find_one_or_404({'email': email})
         if user and check_password_hash(user["password"], password):
-            access_token = create_access_token(identity=username)
+            access_token = create_access_token(identity=email)
             return jsonify(access_token=access_token)
         else:
             return jsonify({
@@ -65,7 +81,7 @@ class UserController:
     def proctedroute(self):
         current_user = get_jwt_identity()
         userexist = self.mongo.db.users.find_one({
-            "username": current_user
+            "email": current_user
         })
         if userexist:
             return jsonify(logged_in=current_user)
