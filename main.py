@@ -2,15 +2,20 @@ from bson import ObjectId
 from flask import Flask
 from flask_pymongo import PyMongo
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
+from dotenv import load_dotenv
 
 from controller.user import UserController
 from authentication.jwthelper import jwt_middleware
 
+import os
+
+load_dotenv()
+
 app = Flask(__name__)
-app.config["MONGO_URI"] = "mongodb://localhost:27017/flask1"
+app.config["MONGO_URI"] = os.getenv('MONGO_URI')
 mongo = PyMongo(app)
 
-app.config['JWT_SECRET_KEY'] = "autocartrain"
+app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET_KEY')
 jwt = JWTManager(app)
 
 user = UserController(mongo)
